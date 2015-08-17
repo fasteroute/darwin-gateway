@@ -16,6 +16,9 @@ dependencies {
 
     // ActiveMQ
     compile 'org.apache.activemq:activemq-client:5.11.1'
+
+    // GSON
+    compile 'com.google.code.gson:gson:2.3.1'
 }
 
 mainClassName = 'uk.fstr.darwingateway.Main'

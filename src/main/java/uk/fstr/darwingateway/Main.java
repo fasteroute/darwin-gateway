@@ -2,9 +2,11 @@ package uk.fstr.darwingateway;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import uk.fstr.darwingateway.bindings.Pport;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 public class Main {
 
@@ -12,6 +14,7 @@ public class Main {
         Logger log = LoggerFactory.getLogger(Main.class);
         log.info("Launching Darwin Gateway.");
 
+        // Get all the environment variables we need.
         Map<String, String> env = System.getenv();
         String STOMP_QUEUE;
         String STOMP_USER;
@@ -33,10 +36,12 @@ public class Main {
             return;
         }
 
-        ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
+        BlockingQueue<Pport> pportInputQueue = new LinkedBlockingQueue<>();
+        BlockingQueue<String> jsonOutputQueue = new LinkedBlockingQueue<>();
 
-        thread(new PushPortListener(STOMP_QUEUE, STOMP_USER, STOMP_PASS, queue), false);
-        thread(new JsonProducer(JSON_URL, JSON_TOPIC, JSON_USER, JSON_PASS, queue), false);
+        thread(new PushPortListener(STOMP_QUEUE, STOMP_USER, STOMP_PASS, pportInputQueue), false);
+        thread(new MessageParser(pportInputQueue, jsonOutputQueue), false);
+        thread(new JsonProducer(JSON_URL, JSON_TOPIC, JSON_USER, JSON_PASS, jsonOutputQueue), false);
 
         while (true) {
             try {

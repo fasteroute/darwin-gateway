@@ -9,6 +9,7 @@ import javax.jms.*;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.zip.GZIPInputStream;
 
@@ -21,13 +22,13 @@ public class PushPortListener implements Runnable, ExceptionListener {
     private final String ppUser;
     private final String ppPass;
     private final static String ppUrl = "tcp://datafeeds.nationalrail.co.uk:61616";
-    private final ConcurrentLinkedQueue onwardQueue;
+    private final BlockingQueue outputQueue;
 
-    public PushPortListener(final String queue, final String user, final String pass, ConcurrentLinkedQueue<String> onwardQueue) {
+    public PushPortListener(final String queue, final String user, final String pass, BlockingQueue<Pport> outputQueue) {
         this.ppQueue = queue;
         this.ppUser = user;
         this.ppPass = pass;
-        this.onwardQueue = onwardQueue;
+        this.outputQueue = outputQueue;
     }
 
     public void run() {
@@ -134,8 +135,7 @@ public class PushPortListener implements Runnable, ExceptionListener {
                         Reader reader = new InputStreamReader(in, "UTF-8");
                         try {
                             Pport pport = (Pport) unmarshaller.unmarshal(reader);
-                            //log.debug("Message received: "+pport.getTs());
-                            processMessage(pport);
+                            outputQueue.add(pport);
                         } finally {
                             reader.close();
                         }
@@ -159,54 +159,6 @@ public class PushPortListener implements Runnable, ExceptionListener {
                 e.printStackTrace();
             }
         } while(true);
-    }
-
-    public void processMessage(Pport m) {
-        if (m.getUR() == null) {
-            log.error("UR is null");
-            return;
-        }
-
-        Pport.UR r = m.getUR();
-
-        for (Schedule s: r.getSchedule()) {
-            log.debug("Received schedule message");
-        }
-
-        for (Association a: r.getAssociation()) {
-            log.debug("Received association message");
-        }
-
-        for (DeactivatedSchedule d: r.getDeactivated()) {
-            log.debug("Received deactivated message");
-            String value = new String();
-            value += d.getRid();
-            onwardQueue.add(value);
-        }
-
-        for (TS t: r.getTS()) {
-            log.debug("Received a train status message");
-        }
-
-        for (StationMessage s: r.getOW()) {
-            log.debug("Received a station message");
-        }
-
-        for (TrainAlert a: r.getTrainAlert()) {
-            log.debug("Received a train alert message");
-        }
-
-        for (TrainOrder o: r.getTrainOrder()) {
-            log.debug("Received a train order message");
-        }
-
-        for (TrackingID t: r.getTrackingID()) {
-            log.debug("Received a tracking ID message");
-        }
-
-        for (RTTIAlarm a: r.getAlarm()) {
-            log.debug("Received an alarm message");
-        }
     }
 
     public synchronized void onException(JMSException ex) {

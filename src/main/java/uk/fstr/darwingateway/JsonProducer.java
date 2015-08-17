@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
 import java.sql.Time;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
@@ -18,9 +19,9 @@ public class JsonProducer implements Runnable {
     private final String topic;
     private final String user;
     private final String pass;
-    private final ConcurrentLinkedQueue<String> onwardQueue;
+    private final BlockingQueue<String> onwardQueue;
 
-    public JsonProducer(String url, String topic, String user, String pass, ConcurrentLinkedQueue<String> onwardQueue) {
+    public JsonProducer(String url, String topic, String user, String pass, BlockingQueue<String> onwardQueue) {
         this.url = url;
         this.topic = topic;
         this.user = user;
@@ -61,7 +62,7 @@ public class JsonProducer implements Runnable {
 
         do {
             try {
-                String text = onwardQueue.poll();
+                String text = onwardQueue.take();
                 if (text == null) {
                     continue;
                 }
