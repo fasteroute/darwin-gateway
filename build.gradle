@@ -1,0 +1,10 @@
+apply plugin: 'application'
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+}
+
+mainClassName = 'uk.fstr.darwingateway.Main'
+
+
