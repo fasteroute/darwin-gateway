@@ -35,6 +35,13 @@ public class MessageParser implements Runnable {
                 .registerTypeAdapter(TSLocation.class, new TSLocationSerializer())
                 .registerTypeAdapter(TSTimeData.class, new TSTimeDataSerializer())
                 .registerTypeAdapter(PlatformData.class, new PlatformDataSerializer())
+                .registerTypeAdapter(OR.class, new ORSerializer())
+                .registerTypeAdapter(OPOR.class, new OPORSerializer())
+                .registerTypeAdapter(IP.class, new IPSerializer())
+                .registerTypeAdapter(OPIP.class, new OPIPSerializer())
+                .registerTypeAdapter(PP.class, new PPSerializer())
+                .registerTypeAdapter(DT.class, new DTSerializer())
+                .registerTypeAdapter(OPDT.class, new OPDTSerializer())
                 //.setPrettyPrinting()
                 .create();
     }

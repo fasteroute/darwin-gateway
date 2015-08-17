@@ -29,8 +29,7 @@ public class TrainStatusMessageSerializer implements JsonSerializer<TS> {
         object.add("late_reason", context.serialize(src.getLateReason()));
 
         JsonElement locations = context.serialize(src.getLocation(),
-                new TypeToken<List<TSLocation>>() {
-                }.getType());
+                new TypeToken<List<TSLocation>>(){}.getType());
         object.add("locations", locations);
 
         return object;
