@@ -31,6 +31,10 @@ public class MessageParser implements Runnable {
                 .registerTypeAdapter(StationMessage.class, new StationMessageSerializer())
                 .registerTypeAdapter(TrainOrder.class, new TrainOrderMessageSerializer())
                 .registerTypeAdapter(RTTIAlarm.class, new AlarmMessageSerializer())
+                .registerTypeAdapter(DisruptionReasonType.class, new DisruptionReasonTypeSerializer())
+                .registerTypeAdapter(TSLocation.class, new TSLocationSerializer())
+                .registerTypeAdapter(TSTimeData.class, new TSTimeDataSerializer())
+                .registerTypeAdapter(PlatformData.class, new PlatformDataSerializer())
                 //.setPrettyPrinting()
                 .create();
     }
