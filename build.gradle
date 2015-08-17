@@ -5,6 +5,17 @@ repositories {
     mavenCentral()
 }
 
+dependencies {
+    // Using sfl4j allows us to replace different loggers later, if desired
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.2'
+
+    // sfl4j is just a facade for loggers. To actually get logging to work, you need to
+    // tie it in with some actual implementation, e.g., logback
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.0.9'
+    compile group: 'ch.qos.logback', name: 'logback-core', version: '1.0.9'
+
+    // ActiveMQ
+    compile 'org.apache.activemq:activemq-client:5.11.1'
+}
+
 mainClassName = 'uk.fstr.darwingateway.Main'
-
-
