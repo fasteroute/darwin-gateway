@@ -3,8 +3,7 @@ package uk.fstr.darwingateway;
 import org.apache.activemq.ActiveMQConnectionFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.fstr.darwingateway.bindings.DeactivatedSchedule;
-import uk.fstr.darwingateway.bindings.Pport;
+import uk.fstr.darwingateway.bindings.*;
 
 import javax.jms.*;
 import javax.xml.bind.JAXBContext;
@@ -167,8 +166,40 @@ public class PushPortListener implements Runnable, ExceptionListener {
 
         Pport.UR r = m.getUR();
 
+        for (Schedule s: r.getSchedule()) {
+            log.debug("Received schedule message");
+        }
+
+        for (Association a: r.getAssociation()) {
+            log.debug("Received association message");
+        }
+
         for (DeactivatedSchedule d: r.getDeactivated()) {
             log.debug("Received deactivated message");
+        }
+
+        for (TS t: r.getTS()) {
+            log.debug("Received a train status message");
+        }
+
+        for (StationMessage s: r.getOW()) {
+            log.debug("Received a station message");
+        }
+
+        for (TrainAlert a: r.getTrainAlert()) {
+            log.debug("Received a train alert message");
+        }
+
+        for (TrainOrder o: r.getTrainOrder()) {
+            log.debug("Received a train order message");
+        }
+
+        for (TrackingID t: r.getTrackingID()) {
+            log.debug("Received a tracking ID message");
+        }
+
+        for (RTTIAlarm a: r.getAlarm()) {
+            log.debug("Received an alarm message");
         }
     }
 
