@@ -9,6 +9,7 @@ import javax.jms.*;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -20,11 +21,13 @@ public class PushPortListener implements Runnable, ExceptionListener {
     private final String ppUser;
     private final String ppPass;
     private final static String ppUrl = "tcp://datafeeds.nationalrail.co.uk:61616";
+    private final ConcurrentLinkedQueue onwardQueue;
 
-    public PushPortListener(final String queue, final String user, final String pass) {
+    public PushPortListener(final String queue, final String user, final String pass, ConcurrentLinkedQueue<String> onwardQueue) {
         this.ppQueue = queue;
         this.ppUser = user;
         this.ppPass = pass;
+        this.onwardQueue = onwardQueue;
     }
 
     public void run() {
@@ -176,6 +179,9 @@ public class PushPortListener implements Runnable, ExceptionListener {
 
         for (DeactivatedSchedule d: r.getDeactivated()) {
             log.debug("Received deactivated message");
+            String value = new String();
+            value += d.getRid();
+            onwardQueue.add(value);
         }
 
         for (TS t: r.getTS()) {

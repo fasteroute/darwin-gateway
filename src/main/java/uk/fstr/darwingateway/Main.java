@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class Main {
 
@@ -15,16 +16,27 @@ public class Main {
         String STOMP_QUEUE;
         String STOMP_USER;
         String STOMP_PASS;
+        String JSON_URL;
+        String JSON_TOPIC;
+        String JSON_USER;
+        String JSON_PASS;
         try {
             STOMP_QUEUE = env.get("STOMP_QUEUE");
             STOMP_USER = env.get("STOMP_USER");
             STOMP_PASS = env.get("STOMP_PASS");
+            JSON_URL = env.get("JSON_URL");
+            JSON_TOPIC = env.get("JSON_TOPIC");
+            JSON_USER = env.get("JSON_USER");
+            JSON_PASS = env.get("JSON_PASS");
         } catch (Exception e) {
             log.error("Could not get all STOMP environment variables");
             return;
         }
 
-        thread(new PushPortListener(STOMP_QUEUE, STOMP_USER, STOMP_PASS), false);
+        ConcurrentLinkedQueue<String> queue = new ConcurrentLinkedQueue<>();
+
+        thread(new PushPortListener(STOMP_QUEUE, STOMP_USER, STOMP_PASS, queue), false);
+        thread(new JsonProducer(JSON_URL, JSON_TOPIC, JSON_USER, JSON_PASS, queue), false);
 
         while (true) {
             try {
