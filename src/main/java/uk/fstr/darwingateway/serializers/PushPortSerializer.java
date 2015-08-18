@@ -41,7 +41,7 @@ public class PushPortSerializer implements JsonSerializer<Pport> {
 
         JsonElement trainStatusMessages = context.serialize(r.getTS(),
                 new TypeToken<List<TS>>(){}.getType());
-        object.add("trains_status_messages", trainStatusMessages);
+        object.add("train_status_messages", trainStatusMessages);
 
         JsonElement stationMessages = context.serialize(r.getOW(),
                 new TypeToken<List<StationMessage>>(){}.getType());
