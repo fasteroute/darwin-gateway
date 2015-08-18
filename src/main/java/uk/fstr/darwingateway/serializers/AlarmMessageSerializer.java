@@ -17,7 +17,23 @@ public class AlarmMessageSerializer implements JsonSerializer<RTTIAlarm> {
     public JsonElement serialize(RTTIAlarm src, Type typeOfSrc, JsonSerializationContext context) {
         JsonObject object = new JsonObject();
 
-        object.addProperty("aid", src.getClear());
+        if (src.getSet() != null) {
+            object.addProperty("action", "set");
+            object.addProperty("aid", src.getSet().getId());
+            if (src.getSet().getTdFeedFail() != null) {
+                object.addProperty("failure", "tdfeed");
+            } else if (src.getSet().getTyrellFeedFail() != null){
+                object.addProperty("failure", "tyrellfeed");
+            } else if (src.getSet().getTdAreaFail() != null) {
+                object.addProperty("failure", "tdarea");
+                object.addProperty("td_area", src.getSet().getTdAreaFail());
+            } else {
+                object.addProperty("failure", "unknown");
+            }
+        } else {
+            object.addProperty("action", "clear");
+            object.addProperty("aid", src.getClear());
+        }
 
         return object;
     }
