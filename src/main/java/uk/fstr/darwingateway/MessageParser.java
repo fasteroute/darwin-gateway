@@ -43,6 +43,7 @@ public class MessageParser implements Runnable {
                 .registerTypeAdapter(DT.class, new DTSerializer())
                 .registerTypeAdapter(OPDT.class, new OPDTSerializer())
                 .registerTypeAdapter(AssocService.class, new AssocServiceSerializer())
+                .registerTypeAdapter(TrainOrderItem.class, new TrainOrderItemSerializer())
                 //.setPrettyPrinting()
                 .create();
     }
