@@ -19,6 +19,12 @@ public class AssociationMessageSerializer implements JsonSerializer<Association>
         JsonObject object = new JsonObject();
 
         object.addProperty("tiploc", src.getTiploc());
+        object.addProperty("category", src.getCategory().value());
+        object.addProperty("deleted", src.isIsDeleted());
+        object.addProperty("cancelled", src.isIsCancelled());
+
+        object.add("main_service", context.serialize(src.getMain()));
+        object.add("associated_service", context.serialize(src.getAssoc()));
 
         return object;
     }
