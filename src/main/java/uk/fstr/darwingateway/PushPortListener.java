@@ -21,6 +21,7 @@ import org.slf4j.LoggerFactory;
 import uk.fstr.darwingateway.bindings.Pport;
 
 import javax.jms.*;
+import javax.jms.IllegalStateException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.*;
@@ -33,11 +34,17 @@ import java.util.zip.GZIPInputStream;
  */
 public class PushPortListener implements Runnable, ExceptionListener {
     private final Logger log = LoggerFactory.getLogger(PushPortListener.class);
+
     private final String ppAddr;
     private final String ppQueue;
     private final String ppUser;
     private final String ppPass;
     private final BlockingQueue outputQueue;
+
+    private final ActiveMQConnectionFactory connectionFactory;
+    private final JAXBContext jaxbContext;
+
+    private int backoffTime = 1;
 
     public PushPortListener(final String addr, final String queue, final String user, final String pass, BlockingQueue<Pport> outputQueue) {
         this.ppAddr = addr;
@@ -45,20 +52,38 @@ public class PushPortListener implements Runnable, ExceptionListener {
         this.ppUser = user;
         this.ppPass = pass;
         this.outputQueue = outputQueue;
+
+        connectionFactory = new ActiveMQConnectionFactory(this.ppUser, this.ppPass, this.ppAddr);
+
+        JAXBContext jbc = null;
+        try {
+            jbc = JAXBContext.newInstance("uk.fstr.darwingateway.bindings");
+        } catch (Exception e) {
+            log.error("Could not build JAXB context");
+        }
+        jaxbContext = jbc;
     }
 
     public void run() {
-        // Create a ConnectionFactory
-        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(this.ppUser, this.ppPass, this.ppAddr);
+        // Main loop of the thread.
+        do {
+            // Connect to the Push Port server. This will only return if the connection is lost for some reason.
+            connect();
 
-        JAXBContext jc;
-        try {
-             jc = JAXBContext.newInstance("uk.fstr.darwingateway.bindings");
-        } catch (Exception e) {
-            log.error("Could not build JAXB context");
-            return;
-        }
+            try {
+                backoffTime = backoffTime * 2;
+                if (backoffTime > 256) {
+                    backoffTime = 128;
+                }
+                log.info("Connection to Push Port server lost. Attempting to reconnect in {} seconds.", backoffTime);
+                Thread.sleep(backoffTime*1000);
+            } catch (InterruptedException e) {
+                log.error("Sleep until time to try reconnect was interrupted.", e);
+            }
+        } while (true);
+    }
 
+    public void connect() {
         // Create a Connection
         Connection connection;
         try {
@@ -125,6 +150,9 @@ public class PushPortListener implements Runnable, ExceptionListener {
             return;
         }
 
+        // We're connected. Reset the backoff time.
+        backoffTime = 1;
+
         do {
             try {
                 // Wait for a message
@@ -147,7 +175,7 @@ public class PushPortListener implements Runnable, ExceptionListener {
                     try {
                         in = new GZIPInputStream(new ByteArrayInputStream(messageBytes));
 
-                        Unmarshaller unmarshaller = jc.createUnmarshaller();
+                        Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
                         Reader reader = new InputStreamReader(in, "UTF-8");
                         try {
                             Pport pport = (Pport) unmarshaller.unmarshal(reader);
@@ -170,9 +198,10 @@ public class PushPortListener implements Runnable, ExceptionListener {
                     }
                 }
 
-            } catch (Exception e) {
+            }catch (Exception e) {
                 System.out.println("Caught: " + e);
                 e.printStackTrace();
+                return;
             }
         } while(true);
     }
