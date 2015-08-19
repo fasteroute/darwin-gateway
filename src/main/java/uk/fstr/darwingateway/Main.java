@@ -29,38 +29,56 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class Main {
 
+    private final static String IN_ADDR = "DG_IN_ADDR";
+    private final static String IN_QUEUE = "DG_IN_QUEUE";
+    private final static String IN_USER = "DG_IN_USER";
+    private final static String IN_PASS = "DG_IN_PASS";
+    private final static String OUT_ADDR = "DG_OUT_ADDR";
+    private final static String OUT_TOPIC = "DG_OUT_TOPIC";
+    private final static String OUT_USER = "DG_OUT_USER";
+    private final static String OUT_PASS = "DG_OUT_PASS";
+
     public static void main(String[] args) {
+
+        // Set up the main function loger.
         Logger log = LoggerFactory.getLogger(Main.class);
         log.info("Launching Darwin Gateway.");
 
-        // Get all the environment variables we need.
+        // Read in all the required environment variables.
         Map<String, String> env = System.getenv();
-        String STOMP_QUEUE;
-        String STOMP_USER;
-        String STOMP_PASS;
-        String JSON_URL;
-        String JSON_TOPIC;
-        String JSON_USER;
-        String JSON_PASS;
-        try {
-            STOMP_QUEUE = env.get("STOMP_QUEUE");
-            STOMP_USER = env.get("STOMP_USER");
-            STOMP_PASS = env.get("STOMP_PASS");
-            JSON_URL = env.get("JSON_URL");
-            JSON_TOPIC = env.get("JSON_TOPIC");
-            JSON_USER = env.get("JSON_USER");
-            JSON_PASS = env.get("JSON_PASS");
-        } catch (Exception e) {
-            log.error("Could not get all STOMP environment variables");
-            return;
+
+        String inAddr = env.get(IN_ADDR);
+        String inQueue = env.get(IN_QUEUE);
+        String inUser = env.get(IN_USER);
+        String inPass = env.get(IN_PASS);
+        String outAddr = env.get(OUT_ADDR);
+        String outTopic = env.get(OUT_TOPIC);
+        String outUser = env.get(OUT_USER);
+        String outPass = env.get(OUT_PASS);
+
+        if (inAddr == null || inQueue == null || inUser == null || inPass == null || outAddr == null || outTopic == null
+                || outUser == null || outPass == null) {
+            System.err.println();
+            System.err.println();
+            System.err.println("All of the following environment variables must be set for this program to run:");
+            System.err.printf("    $%s\t\t - The address of the Push Port ActiveMQ server.\n", IN_ADDR);
+            System.err.printf("    $%s\t - The queue name to connect to on the Push Port ActiveMQ server.\n", IN_QUEUE);
+            System.err.printf("    $%s\t\t - The user name to connect to the Push Port ActiveMQ server with.\n", IN_USER);
+            System.err.printf("    $%s\t\t - The password to connect to the Push Port ActiveMQ server with.\n", IN_PASS);
+            System.err.printf("    $%s\t - The address of the Output ActiveMQ server to send JSON messages to.\n", OUT_ADDR);
+            System.err.printf("    $%s\t - The topic name on the Output ActiveMQ server to send JSON messages to.\n", OUT_TOPIC);
+            System.err.printf("    $%s\t - The user name to connect to the Output ActiveMQ server with.\n", OUT_USER);
+            System.err.printf("    $%s\t - The password to connect to the Output ActiveMQ server with.\n", OUT_PASS);
+            System.err.println();
+            System.exit(1);
         }
 
         BlockingQueue<Pport> pportInputQueue = new LinkedBlockingQueue<>();
         BlockingQueue<String> jsonOutputQueue = new LinkedBlockingQueue<>();
 
-        thread(new PushPortListener(STOMP_QUEUE, STOMP_USER, STOMP_PASS, pportInputQueue), false);
+        thread(new PushPortListener(inAddr, inQueue, inUser, inPass, pportInputQueue), false);
         thread(new MessageParser(pportInputQueue, jsonOutputQueue), false);
-        thread(new JsonProducer(JSON_URL, JSON_TOPIC, JSON_USER, JSON_PASS, jsonOutputQueue), false);
+        thread(new JsonProducer(outAddr, outTopic, outUser, outPass, jsonOutputQueue), false);
 
         while (true) {
             try {

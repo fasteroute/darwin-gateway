@@ -27,19 +27,20 @@ import java.io.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.zip.GZIPInputStream;
 
-/** :istens on the NRE ActiveMQ server to receive Push Port messages and instantiate them with the XML bindings.
+/** Listens on the NRE ActiveMQ server to receive Push Port messages and instantiate them with the XML bindings.
  *
  * @author George Goldberg <george@fasteroute.com>
  */
 public class PushPortListener implements Runnable, ExceptionListener {
     private final Logger log = LoggerFactory.getLogger(PushPortListener.class);
+    private final String ppAddr;
     private final String ppQueue;
     private final String ppUser;
     private final String ppPass;
-    private final static String ppUrl = "tcp://datafeeds.nationalrail.co.uk:61616";
     private final BlockingQueue outputQueue;
 
-    public PushPortListener(final String queue, final String user, final String pass, BlockingQueue<Pport> outputQueue) {
+    public PushPortListener(final String addr, final String queue, final String user, final String pass, BlockingQueue<Pport> outputQueue) {
+        this.ppAddr = addr;
         this.ppQueue = queue;
         this.ppUser = user;
         this.ppPass = pass;
@@ -48,7 +49,7 @@ public class PushPortListener implements Runnable, ExceptionListener {
 
     public void run() {
         // Create a ConnectionFactory
-        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(this.ppUser, this.ppPass, this.ppUrl);
+        ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(this.ppUser, this.ppPass, this.ppAddr);
 
         JAXBContext jc;
         try {
