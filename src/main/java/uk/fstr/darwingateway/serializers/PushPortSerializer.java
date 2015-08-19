@@ -1,3 +1,18 @@
+/**
+ * Copyright 2015 Faster Route Limited <hello@fasteroute.com>
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package uk.fstr.darwingateway.serializers;
 
 import com.google.gson.JsonElement;
@@ -10,8 +25,9 @@ import uk.fstr.darwingateway.bindings.*;
 import java.lang.reflect.Type;
 import java.util.List;
 
-/**
- * Created by gberg on 17/08/15.
+/** JSON Serializer for Push Port messages created from the XML bindings.
+ *
+ * @author George Goldberg <george@fasteroute.com>
  */
 public class PushPortSerializer implements JsonSerializer<Pport> {
 
@@ -26,13 +42,11 @@ public class PushPortSerializer implements JsonSerializer<Pport> {
         Pport.UR r = src.getUR();
 
         JsonElement scheduleMessages = context.serialize(r.getSchedule(),
-                new TypeToken<List<Schedule>>() {
-                }.getType());
+                new TypeToken<List<Schedule>>(){}.getType());
         object.add("schedule_messages", scheduleMessages);
 
         JsonElement associationMessages = context.serialize(r.getAssociation(),
-                new TypeToken<List<Association>>() {
-                }.getType());
+                new TypeToken<List<Association>>(){}.getType());
         object.add("association_messages", associationMessages);
 
         JsonElement deactivatedMessages = context.serialize(r.getDeactivated(),
