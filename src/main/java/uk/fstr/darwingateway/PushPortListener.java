@@ -214,14 +214,13 @@ public class PushPortListener implements Runnable, ExceptionListener {
                 }
 
             }catch (Exception e) {
-                System.out.println("Caught: " + e);
-                e.printStackTrace();
+                log.error("Caught Exception", e);
                 return;
             }
         } while(true);
     }
 
     public synchronized void onException(JMSException ex) {
-        System.out.println("JMS Exception occured.  Shutting down client.");
+        log.error("JMS Exception occured.  Shutting down client.");
     }
 }

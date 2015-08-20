@@ -88,15 +88,14 @@ public class JsonProducer implements Runnable {
                 TextMessage message = session.createTextMessage(payload.string);
 
                 // Tell the producer to send the message
-                System.out.println("Sent message: " + message.hashCode() + " : " + Thread.currentThread().getName());
+                log.debug("Sent message: " + message.hashCode() + " : " + Thread.currentThread().getName());
                 producer.send(message);
 
                 // Add the message to the ack queue.
                 ackQueue.add(message);
 
             } catch (Exception e) {
-                System.out.println("Caught: " + e);
-                e.printStackTrace();
+                log.error("Caught Exception", e);
             }
         } while (true);
         /*
