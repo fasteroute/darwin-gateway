@@ -163,7 +163,7 @@ public class PushPortListener implements Runnable, ExceptionListener {
                         break;
                     }
                     m.acknowledge();
-                    log.info("Acking message");
+                    log.debug("Acking message");
                 } while(true);
             } catch (Exception e) {
                 log.error("Something horrible happened trying to get messages from the Ack queue.");

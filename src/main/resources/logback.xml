@@ -8,7 +8,7 @@
     </appender>
 
     <!-- Show all logs down to debug level for DarwinGateway -->
-    <logger name="uk.fstr.darwingateway" level="DEBUG" additivity="false">
+    <logger name="uk.fstr.darwingateway" level="INFO" additivity="false">
         <appender-ref ref="STDOUT" />
     </logger>
 
