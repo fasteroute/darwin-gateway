@@ -73,7 +73,7 @@ public class JsonProducer implements Runnable {
             producer = session.createProducer(destination);
             producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
         } catch (Exception e) {
-            log.error("Something went wrong setting things up");
+            log.error("Something went wrong setting things up:", e);
             return;
         }
 
