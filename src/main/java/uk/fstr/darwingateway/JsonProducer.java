@@ -33,14 +33,17 @@ public class JsonProducer implements Runnable {
     private final String topic;
     private final String user;
     private final String pass;
-    private final BlockingQueue<String> onwardQueue;
+    private final BlockingQueue<MessageAndJsonStringPair> onwardQueue;
+    private final BlockingQueue<Message> ackQueue;
 
-    public JsonProducer(String url, String topic, String user, String pass, BlockingQueue<String> onwardQueue) {
+    public JsonProducer(String url, String topic, String user, String pass,
+                        BlockingQueue<MessageAndJsonStringPair> onwardQueue, BlockingQueue<Message> ackQueue) {
         this.url = url;
         this.topic = topic;
         this.user = user;
         this.pass = pass;
         this.onwardQueue = onwardQueue;
+        this.ackQueue = ackQueue;
     }
 
     public void run() {
@@ -76,16 +79,20 @@ public class JsonProducer implements Runnable {
 
         do {
             try {
-                String text = onwardQueue.take();
-                if (text == null) {
+                MessageAndJsonStringPair payload = onwardQueue.take();
+
+                if (payload.string == null) {
                     continue;
                 }
 
-                TextMessage message = session.createTextMessage(text);
+                TextMessage message = session.createTextMessage(payload.string);
 
                 // Tell the producer to send the message
                 System.out.println("Sent message: " + message.hashCode() + " : " + Thread.currentThread().getName());
                 producer.send(message);
+
+                // Add the message to the ack queue.
+                ackQueue.add(message);
 
             } catch (Exception e) {
                 System.out.println("Caught: " + e);

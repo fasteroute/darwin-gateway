@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import uk.fstr.darwingateway.bindings.*;
 import uk.fstr.darwingateway.serializers.*;
 
+import javax.jms.Message;
 import java.util.concurrent.BlockingQueue;
 
 /** Receives messages generated from the XML bindings, and converts them to JSON strings.
@@ -30,11 +31,11 @@ import java.util.concurrent.BlockingQueue;
  */
 public class MessageParser implements Runnable {
     private final Logger log = LoggerFactory.getLogger(MessageParser.class);
-    private final BlockingQueue<Pport> inputQueue;
-    private final BlockingQueue<String> outputQueue;
+    private final BlockingQueue<MessageAndPPortPair> inputQueue;
+    private final BlockingQueue<MessageAndJsonStringPair> outputQueue;
     private final Gson gson;
 
-    public MessageParser(BlockingQueue<Pport> inputQueue, BlockingQueue<String> outputQueue) {
+    public MessageParser(BlockingQueue<MessageAndPPortPair> inputQueue, BlockingQueue<MessageAndJsonStringPair> outputQueue) {
         this.inputQueue = inputQueue;
         this.outputQueue = outputQueue;
 
@@ -66,19 +67,19 @@ public class MessageParser implements Runnable {
 
     public void run() {
         do {
-            Pport pport;
+            MessageAndPPortPair payload;
             try {
-                pport = inputQueue.take();
+                payload = inputQueue.take();
             } catch (InterruptedException e) {
                 e.printStackTrace();
                 break;
             }
 
-            processMessage(pport);
+            processMessage(payload.pport, payload.message);
         } while (true);
     }
 
-    public void processMessage(Pport m) {
-        outputQueue.add(gson.toJson(m));
+    public void processMessage(Pport m, Message message) {
+        outputQueue.add(new MessageAndJsonStringPair(message, gson.toJson(m)));
     }
 }

@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import uk.fstr.darwingateway.bindings.Pport;
 
+import javax.jms.Message;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -73,12 +74,13 @@ public class Main {
             System.exit(1);
         }
 
-        BlockingQueue<Pport> pportInputQueue = new LinkedBlockingQueue<>();
-        BlockingQueue<String> jsonOutputQueue = new LinkedBlockingQueue<>();
+        BlockingQueue<MessageAndPPortPair> pportInputQueue = new LinkedBlockingQueue<>();
+        BlockingQueue<MessageAndJsonStringPair> jsonOutputQueue = new LinkedBlockingQueue<>();
+        BlockingQueue<Message> messageAckQueue = new LinkedBlockingQueue<>();
 
-        thread(new PushPortListener(inAddr, inQueue, inUser, inPass, pportInputQueue), false);
+        thread(new PushPortListener(inAddr, inQueue, inUser, inPass, pportInputQueue, messageAckQueue), false);
         thread(new MessageParser(pportInputQueue, jsonOutputQueue), false);
-        thread(new JsonProducer(outAddr, outTopic, outUser, outPass, jsonOutputQueue), false);
+        thread(new JsonProducer(outAddr, outTopic, outUser, outPass, jsonOutputQueue, messageAckQueue), false);
 
         while (true) {
             try {

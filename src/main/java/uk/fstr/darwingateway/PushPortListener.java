@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 import uk.fstr.darwingateway.bindings.Pport;
 
 import javax.jms.*;
-import javax.jms.IllegalStateException;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
 import java.io.*;
@@ -40,18 +39,21 @@ public class PushPortListener implements Runnable, ExceptionListener {
     private final String ppUser;
     private final String ppPass;
     private final BlockingQueue outputQueue;
+    private final BlockingQueue ackQueue;
 
     private final ActiveMQConnectionFactory connectionFactory;
     private final JAXBContext jaxbContext;
 
     private int backoffTime = 1;
 
-    public PushPortListener(final String addr, final String queue, final String user, final String pass, BlockingQueue<Pport> outputQueue) {
+    public PushPortListener(final String addr, final String queue, final String user, final String pass,
+                            BlockingQueue<MessageAndPPortPair> outputQueue, final BlockingQueue<Message> ackQueue) {
         this.ppAddr = addr;
         this.ppQueue = queue;
         this.ppUser = user;
         this.ppPass = pass;
         this.outputQueue = outputQueue;
+        this.ackQueue = ackQueue;
 
         connectionFactory = new ActiveMQConnectionFactory(this.ppUser, this.ppPass, this.ppAddr);
 
@@ -109,7 +111,7 @@ public class PushPortListener implements Runnable, ExceptionListener {
         // Create a Session
         Session session;
         try {
-            session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         } catch (Exception e) {
             log.error("Could not create a session.");
             try {
@@ -155,8 +157,21 @@ public class PushPortListener implements Runnable, ExceptionListener {
 
         do {
             try {
+                do {
+                    Message m = (Message) ackQueue.poll();
+                    if (m == null) {
+                        break;
+                    }
+                    m.acknowledge();
+                    log.info("Acking message");
+                } while(true);
+            } catch (Exception e) {
+                log.error("Something horrible happened trying to get messages from the Ack queue.");
+                break;
+            }
+            try {
                 // Wait for a message
-                Message message = consumer.receive(1000);
+                Message message = consumer.receive(100);
 
                 if (message instanceof BytesMessage) {
                     final BytesMessage bytesMessage = (BytesMessage) message;
@@ -179,7 +194,7 @@ public class PushPortListener implements Runnable, ExceptionListener {
                         Reader reader = new InputStreamReader(in, "UTF-8");
                         try {
                             Pport pport = (Pport) unmarshaller.unmarshal(reader);
-                            outputQueue.add(pport);
+                            outputQueue.add(new MessageAndPPortPair(message, pport));
                         } finally {
                             reader.close();
                         }
