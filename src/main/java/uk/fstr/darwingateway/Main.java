@@ -74,13 +74,27 @@ public class Main {
             System.exit(1);
         }
 
-        BlockingQueue<MessageAndPPortPair> pportInputQueue = new LinkedBlockingQueue<>();
-        BlockingQueue<MessageAndJsonStringPair> jsonOutputQueue = new LinkedBlockingQueue<>();
-        BlockingQueue<Message> messageAckQueue = new LinkedBlockingQueue<>();
+        final BlockingQueue<MessageAndPPortPair> pportInputQueue = new LinkedBlockingQueue<>();
+        final BlockingQueue<MessageAndJsonStringPair> jsonOutputQueue = new LinkedBlockingQueue<>();
+        final BlockingQueue<Message> messageAckQueue = new LinkedBlockingQueue<>();
 
         thread(new PushPortListener(inAddr, inQueue, inUser, inPass, pportInputQueue, messageAckQueue), false);
         thread(new MessageParser(pportInputQueue, jsonOutputQueue), false);
         thread(new JsonProducer(outAddr, outTopic, outUser, outPass, jsonOutputQueue, messageAckQueue), false);
+
+        thread(new Runnable() {
+            @Override
+            public void run() {
+                do {
+                    log.info("Queue Status Report. In Queue: {}, Out Queue: {}, Ack Queue {}", pportInputQueue.size(), jsonOutputQueue.size(), messageAckQueue.size());
+                    try {
+                        Thread.sleep(60000);
+                    } catch (Exception e) {
+                        continue;
+                    }
+                } while(true);
+            }
+        }, false);
 
         while (true) {
             try {
