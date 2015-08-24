@@ -23,4 +23,4 @@ dependencies {
 
 mainClassName = 'uk.fstr.darwingateway.Main'
 
-applicationDefaultJvmArgs = ["-verbosegc", "-Xmx256m", "-Xmx512m"]
+applicationDefaultJvmArgs = ["-verbosegc", "-Xsx256m", "-Xmx512m"]
