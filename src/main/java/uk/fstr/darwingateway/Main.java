@@ -80,7 +80,7 @@ public class Main {
 
         thread(new PushPortListener(inAddr, inQueue, inUser, inPass, pportInputQueue, messageAckQueue), false);
         thread(new MessageParser(pportInputQueue, jsonOutputQueue), false);
-        thread(new JsonProducer(outAddr, outTopic, outUser, outPass, jsonOutputQueue, messageAckQueue), false);
+        thread(new RabbitJsonProducer(outAddr, outTopic, outUser, outPass, jsonOutputQueue, messageAckQueue), false);
 
         thread(new Runnable() {
             @Override
