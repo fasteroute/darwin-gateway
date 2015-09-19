@@ -15,6 +15,8 @@
  */
 package uk.fstr.darwingateway;
 
+import org.apache.commons.net.PrintCommandListener;
+import org.apache.commons.net.ftp.FTP;
 import org.apache.commons.net.ftp.FTPClient;
 import org.apache.commons.net.ftp.FTPFile;
 import org.slf4j.Logger;
@@ -25,10 +27,7 @@ import uk.fstr.darwingateway.bindings.Schedule;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.Unmarshaller;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.util.HashSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.zip.GZIPInputStream;
@@ -65,66 +64,71 @@ public class SnapshotFetcher implements Runnable {
     }
 
     public void run() {
-        try {
-            Thread.sleep(60000);
-
-            FTPClient client = new FTPClient();
-
+        while (true) {
             try {
-                client.connect(ftpHost);
-                client.login(ftpUser, ftpPass);
-                client.changeWorkingDirectory("snapshot");
+                Thread.sleep(60000);
 
-                FTPFile[] files = client.listFiles();
-                for (FTPFile file : files) {
-                    if (!processedSnapshots.contains(file.getName())) {
-                        log.info("New snapshot found: " + file.getName());
-                        if (file.getType() == FTPFile.FILE_TYPE) {
-                            InputStream fileStream = client.retrieveFileStream(file.getName());
-                            GZIPInputStream gzInStream = new GZIPInputStream(fileStream);
-                            Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
-                            Reader reader = new InputStreamReader(gzInStream, "UTF-8");
-                            try {
-                                Pport pport = (Pport) unmarshaller.unmarshal(reader);
-                                if (pport != null && pport.getSR() != null && pport.getSR().getSchedule() != null && pport.getSR().getAssociation() != null) {
-                                    for (Schedule s: pport.getSR().getSchedule()) {
-                                        outputQueue.add(new SnapshotMessageComponent(
-                                                pport.getTs().toString(),
-                                                pport.getVersion(),
-                                                s,
-                                                null));
+                FTPClient client = new FTPClient();
+
+                try {
+                    client.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out), true));
+                    client.connect(ftpHost);
+                    client.login(ftpUser, ftpPass);
+                    client.enterLocalPassiveMode();
+                    client.setFileType(FTP.BINARY_FILE_TYPE);
+                    client.changeWorkingDirectory("snapshot");
+
+                    FTPFile[] files = client.listFiles();
+                    for (FTPFile file : files) {
+                        if (!processedSnapshots.contains(file.getName())) {
+                            log.info("New snapshot found: " + file.getName());
+                            if (file.getType() == FTPFile.FILE_TYPE) {
+                                InputStream fileStream = client.retrieveFileStream(file.getName());
+                                GZIPInputStream gzInStream = new GZIPInputStream(fileStream);
+                                Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
+                                Reader reader = new InputStreamReader(gzInStream, "UTF-8");
+                                try {
+                                    Pport pport = (Pport) unmarshaller.unmarshal(reader);
+                                    if (pport != null && pport.getSR() != null && pport.getSR().getSchedule() != null && pport.getSR().getAssociation() != null) {
+                                        for (Schedule s : pport.getSR().getSchedule()) {
+                                            outputQueue.add(new SnapshotMessageComponent(
+                                                    pport.getTs().toString(),
+                                                    pport.getVersion(),
+                                                    s,
+                                                    null));
+                                        }
+                                        for (Association a : pport.getSR().getAssociation()) {
+                                            outputQueue.add(new SnapshotMessageComponent(
+                                                    pport.getTs().toString(),
+                                                    pport.getVersion(),
+                                                    null,
+                                                    a
+                                            ));
+                                        }
+                                        processedSnapshots.add(file.getName());
+                                    } else {
+                                        log.error("Something is null in the snapshot message");
                                     }
-                                    for (Association a: pport.getSR().getAssociation()) {
-                                        outputQueue.add(new SnapshotMessageComponent(
-                                                pport.getTs().toString(),
-                                                pport.getVersion(),
-                                                null,
-                                                a
-                                        ));
-                                    }
-                                    processedSnapshots.add(file.getName());
-                                } else {
-                                    log.error("Something is null in the snapshot message");
+                                } finally {
+                                    reader.close();
                                 }
-                            } finally {
-                                reader.close();
                             }
                         }
-                    }
 
-                }
-            client.logout();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    client.disconnect();
+                    }
+                    client.logout();
                 } catch (IOException e) {
                     e.printStackTrace();
+                } finally {
+                    try {
+                        client.disconnect();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                 }
+            } catch (Exception e) {
+                log.error("An exception occurred.", e);
             }
-        } catch(Exception e) {
-            log.error("An exception occurred.", e);
         }
     }
 }
