@@ -38,6 +38,9 @@ public class Main {
     private final static String OUT_TOPIC = "DG_OUT_TOPIC";
     private final static String OUT_USER = "DG_OUT_USER";
     private final static String OUT_PASS = "DG_OUT_PASS";
+    private final static String FTP_HOST = "DG_FTP_HOST";
+    private final static String FTP_USER = "DG_FTP_USER";
+    private final static String FTP_PASS = "DG_FTP_PASS";
 
     public static void main(String[] args) {
 
@@ -56,9 +59,13 @@ public class Main {
         String outTopic = env.get(OUT_TOPIC);
         String outUser = env.get(OUT_USER);
         String outPass = env.get(OUT_PASS);
+        String ftpHost = env.get(FTP_HOST);
+        String ftpUser = env.get(FTP_USER);
+        String ftpPass = env.get(FTP_PASS);
+
 
         if (inAddr == null || inQueue == null || inUser == null || inPass == null || outAddr == null || outTopic == null
-                || outUser == null || outPass == null) {
+                || outUser == null || outPass == null || ftpHost == null || ftpUser == null || ftpPass == null) {
             System.err.println();
             System.err.println();
             System.err.println("All of the following environment variables must be set for this program to run:");
@@ -70,16 +77,21 @@ public class Main {
             System.err.printf("    $%s\t - The topic name on the Output ActiveMQ server to send JSON messages to.\n", OUT_TOPIC);
             System.err.printf("    $%s\t - The user name to connect to the Output ActiveMQ server with.\n", OUT_USER);
             System.err.printf("    $%s\t - The password to connect to the Output ActiveMQ server with.\n", OUT_PASS);
+            System.err.printf("    $%s\t - The FTP server for getting snapshots from.\n", FTP_HOST);
+            System.err.printf("    $%s\t - The FTP username for getting snapshots.\n", FTP_USER);
+            System.err.printf("    $%s\t - The FTP password for getting snapshots.\n", FTP_PASS);
             System.err.println();
             System.exit(1);
         }
 
         final BlockingQueue<MessageAndPPortPair> pportInputQueue = new LinkedBlockingQueue<>();
         final BlockingQueue<MessageAndJsonStringPair> jsonOutputQueue = new LinkedBlockingQueue<>();
+        final BlockingQueue<SnapshotMessageComponent> srInputQueue = new LinkedBlockingQueue<>();
         final BlockingQueue<Message> messageAckQueue = new LinkedBlockingQueue<>();
 
         thread(new PushPortListener(inAddr, inQueue, inUser, inPass, pportInputQueue, messageAckQueue), false);
-        thread(new MessageParser(pportInputQueue, jsonOutputQueue), false);
+        thread(new SnapshotFetcher(ftpHost, ftpUser, ftpPass, srInputQueue), false);
+        thread(new MessageParser(pportInputQueue, srInputQueue, jsonOutputQueue), false);
         thread(new RabbitJsonProducer(outAddr, outTopic, outUser, outPass, jsonOutputQueue, messageAckQueue), false);
 
         thread(new Runnable() {

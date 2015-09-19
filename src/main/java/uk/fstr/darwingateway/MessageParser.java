@@ -32,15 +32,20 @@ import java.util.concurrent.BlockingQueue;
 public class MessageParser implements Runnable {
     private final Logger log = LoggerFactory.getLogger(MessageParser.class);
     private final BlockingQueue<MessageAndPPortPair> inputQueue;
+    private final BlockingQueue<SnapshotMessageComponent> srInputQueue;
     private final BlockingQueue<MessageAndJsonStringPair> outputQueue;
     private final Gson gson;
 
-    public MessageParser(BlockingQueue<MessageAndPPortPair> inputQueue, BlockingQueue<MessageAndJsonStringPair> outputQueue) {
+    public MessageParser(BlockingQueue<MessageAndPPortPair> inputQueue,
+                         BlockingQueue<SnapshotMessageComponent> srInputQueue,
+                         BlockingQueue<MessageAndJsonStringPair> outputQueue) {
         this.inputQueue = inputQueue;
+        this.srInputQueue = srInputQueue;
         this.outputQueue = outputQueue;
 
         this.gson = new GsonBuilder()
                 .registerTypeAdapter(Pport.class, new PushPortSerializer())
+                .registerTypeAdapter(SnapshotMessageComponent.class, new SnapshotMessageComponentSerializer())
                 .registerTypeAdapter(Schedule.class, new ScheduleMessageSerializer())
                 .registerTypeAdapter(Association.class, new AssociationMessageSerializer())
                 .registerTypeAdapter(DeactivatedSchedule.class, new DeactivatedMessageSerializer())
@@ -68,18 +73,34 @@ public class MessageParser implements Runnable {
     public void run() {
         do {
             MessageAndPPortPair payload;
-            try {
-                payload = inputQueue.take();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
+            SnapshotMessageComponent srPayload;
+
+            payload = inputQueue.poll();
+            if (payload != null) {
+                processMessage(payload.pport, payload.message);
+                continue;
             }
 
-            processMessage(payload.pport, payload.message);
+            srPayload = srInputQueue.poll();
+            if (srPayload != null) {
+                processMessage(srPayload);
+                continue;
+            }
+
+            // Both queues were empty. Sleep for a bit.
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         } while (true);
     }
 
     public void processMessage(Pport m, Message message) {
         outputQueue.add(new MessageAndJsonStringPair(message, gson.toJson(m)));
+    }
+
+    public void processMessage(SnapshotMessageComponent m) {
+        outputQueue.add(new MessageAndJsonStringPair(null, gson.toJson(m)));
     }
 }

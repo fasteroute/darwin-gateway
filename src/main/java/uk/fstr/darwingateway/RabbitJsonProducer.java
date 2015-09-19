@@ -75,11 +75,13 @@ public class RabbitJsonProducer implements Runnable {
                 channel.basicPublish(topic, "", null, payload.string.getBytes());
 
                 Message message = payload.message;
-                // Tell the producer to send the message
-                log.debug("Sent message: " + message.hashCode() + " : " + Thread.currentThread().getName());
+                if (message != null) {
+                    // Tell the producer to send the message
+                    log.debug("Sent message: " + message.hashCode() + " : " + Thread.currentThread().getName());
 
-                // Add the message to the ack queue.
-                ackQueue.add(message);
+                    // Add the message to the ack queue.
+                    ackQueue.add(message);
+                }
 
             } catch (Exception e) {
                 log.error("Caught Exception", e);

@@ -38,6 +38,7 @@ public class PushPortSerializer implements JsonSerializer<Pport> {
         object.addProperty("timestamp", src.getTs().toString());
         object.addProperty("version", src.getVersion());
         object.addProperty("update_origin", src.getUR().getUpdateOrigin());
+        object.addProperty("message_type", "update");
 
         Pport.UR r = src.getUR();
 

@@ -156,13 +156,13 @@ public class PushPortListener implements Runnable, ExceptionListener {
         backoffTime = 1;
 
         do {
+            // Ack all messages that are in the ack queue.
             try {
                 do {
                     Message m = (Message) ackQueue.poll();
                     if (m == null) {
                         break;
                     }
-                    // Acking immediately for now to avoid memory leak.
                     m.acknowledge();
                     log.debug("Acking message");
                 } while(true);
@@ -170,6 +170,8 @@ public class PushPortListener implements Runnable, ExceptionListener {
                 log.error("Something horrible happened trying to get messages from the Ack queue.");
                 break;
             }
+
+            // Wait for a message to come through.
             try {
                 // Wait for a message
                 Message message = consumer.receive(100);
@@ -196,10 +198,6 @@ public class PushPortListener implements Runnable, ExceptionListener {
                         try {
                             Pport pport = (Pport) unmarshaller.unmarshal(reader);
                             outputQueue.add(new MessageAndPPortPair(message, pport));
-
-                            // Acknowledge messages here to stop them leaking.
-                            // FIXME: Change to a less buggy activemq client library to fix this properly.
-                            //message.acknowledge();
                         } finally {
                             reader.close();
                         }

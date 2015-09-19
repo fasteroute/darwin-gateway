@@ -22,6 +22,9 @@ dependencies {
 
     // GSON
     compile 'com.google.code.gson:gson:2.3.1'
+
+    // Apache Commons Net (for FTP Client)
+    compile 'commons-net:commons-net:3.3'
 }
 
 mainClassName = 'uk.fstr.darwingateway.Main'
