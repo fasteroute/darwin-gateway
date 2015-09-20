@@ -71,7 +71,7 @@ public class SnapshotFetcher implements Runnable {
                 FTPClient client = new FTPClient();
 
                 try {
-                    client.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out), true));
+                    //client.addProtocolCommandListener(new PrintCommandListener(new PrintWriter(System.out), true));
                     client.connect(ftpHost);
                     client.login(ftpUser, ftpPass);
                     client.enterLocalPassiveMode();
@@ -80,7 +80,7 @@ public class SnapshotFetcher implements Runnable {
 
                     FTPFile[] files = client.listFiles();
                     for (FTPFile file : files) {
-                        if (!processedSnapshots.contains(file.getName())) {
+                        if (!processedSnapshots.contains(""+file.getTimestamp().getTimeInMillis())) {
                             log.info("New snapshot found: " + file.getName());
                             if (file.getType() == FTPFile.FILE_TYPE) {
                                 InputStream fileStream = client.retrieveFileStream(file.getName());
