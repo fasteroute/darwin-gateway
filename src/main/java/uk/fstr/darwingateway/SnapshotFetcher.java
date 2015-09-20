@@ -105,7 +105,7 @@ public class SnapshotFetcher implements Runnable {
                                                     a
                                             ));
                                         }
-                                        processedSnapshots.add(file.getName());
+                                        processedSnapshots.add(""+file.getTimestamp().getTimeInMillis());
                                     } else {
                                         log.error("Something is null in the snapshot message");
                                     }
